@@ -1,0 +1,607 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ab0aa84f-2de1-4541-b954-bc27b1818ead",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "http://opensky-network.org/api/states/all",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "09934548-e45f-47e0-8061-213a79a3af4b",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = items[0].json;\nconst time = input.time;\nconst states = input.states || [];\n\nconst mappedStates = states.map(s => {\n  return {\n    icao24: s[0],\n    callsign: s[1] ? s[1].trim() : \"\",\n    origin_country: s[2],\n    time_position: s[3],\n    last_contact: s[4],\n    longitude: s[5],\n    latitude: s[6],\n    baro_altitude: s[7],\n    on_ground: s[8],\n    velocity: s[9],\n    true_track: s[10],\n    vertical_rate: s[11],\n    geo_altitude: s[13],\n    squawk: s[14],\n    position_source: s[16],\n    category: s[17]\n  };\n});\n\nreturn [\n  {\n    json: {\n      time,\n      states: mappedStates,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        432,
+        0
+      ],
+      "id": "daf8946c-4e89-49fa-95bf-8ca0edea0637",
+      "name": "Normalize SnapShot"
+    },
+    {
+      "parameters": {
+        "jsCode": "const jsonData = items[0].json;\n\nreturn [\n  {\n    json: {\n      text: JSON.stringify(jsonData, null, 2)\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        -80
+      ],
+      "id": "d7656699-72ea-480e-b29c-022e5239fbfb",
+      "name": "Prepare File Output"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "text",
+        "options": {
+          "encoding": "utf8",
+          "fileName": "Region1.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1472,
+        -80
+      ],
+      "id": "baaa25c6-f361-40b9-b09b-44af5f0ef0ec",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "/data/snapshots/Region1.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        -80
+      ],
+      "id": "a1d54733-6e9c-4b4e-9edc-0a7701d407c5",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "jsCode": "     const input = items[0].json;\n     const time = input.time;\n     const states = input.states || [];\n\n     function assignRegion(f) {\n       const lat = f.latitude;\n       const lon = f.longitude;\n\n       // Example boxes – adjust to your own region definitions\n       if (lat >= 35 && lat <= 45 && lon >= 25 && lon <= 45) {\n         return \"region1\";\n       } else if (lat >= 40 && lat <= 50 && lon >= 0 && lon <= 20) {\n         return \"region2\";\n       } else if (lat >= 30 && lat <= 40 && lon >= 40 && lon <= 60) {\n         return \"region3\";\n       }\n       // Flights outside defined boxes can be dropped or marked 'other'\n       return \"other\";\n     }\n\n     const taggedStates = states.map(f => ({\n       ...f,\n       region: assignRegion(f),\n     }));\n\n     return [\n       {\n         json: {\n           time,\n           states: taggedStates,\n         },\n       },\n     ];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "4f541df1-22d7-4b6c-bb4a-927c44699670",
+      "name": "Assign Regions"
+    },
+    {
+      "parameters": {
+        "jsCode": "     const input = items[0].json;\n     const time = input.time;\n     const states = input.states || [];\n\n     const regionStates = states.filter(f => f.region === \"region1\");\n\n     return [\n       {\n         json: {\n           time,\n           region: \"region1\",\n           states: regionStates,\n         },\n       },\n     ];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        -80
+      ],
+      "id": "99b5bfdc-635b-43f2-ac86-b9843747a30e",
+      "name": "Region 1"
+    },
+    {
+      "parameters": {
+        "jsCode": "     const input = items[0].json;\n     const time = input.time;\n     const states = input.states || [];\n\n     const regionStates = states.filter(f => f.region === \"region2\");\n\n     return [\n       {\n         json: {\n           time,\n           region: \"region2\",\n           states: regionStates,\n         },\n       },\n     ];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        -240
+      ],
+      "id": "81d8a375-5e4a-4f67-b30e-54823a32e54f",
+      "name": "Region 2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const jsonData = items[0].json;\n\nreturn [\n  {\n    json: {\n      text: JSON.stringify(jsonData, null, 2)\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        -240
+      ],
+      "id": "7586f49a-3633-41a7-9042-c5a805bb7924",
+      "name": "Prepare File Output2"
+    },
+    {
+      "parameters": {
+        "jsCode": "     const input = items[0].json;\n     const time = input.time;\n     const states = input.states || [];\n\n     const regionStates = states.filter(f => f.region === \"region3\");\n\n     return [\n       {\n         json: {\n           time,\n           region: \"region3\",\n           states: regionStates,\n         },\n       },\n     ];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        96
+      ],
+      "id": "cfdf1803-7c6d-4905-81b0-fb425dce1077",
+      "name": "Region3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const jsonData = items[0].json;\n\nreturn [\n  {\n    json: {\n      text: JSON.stringify(jsonData, null, 2)\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        96
+      ],
+      "id": "3f8ffcfe-ee46-40a8-8c4a-3d91b1409525",
+      "name": "Prepare File Output3"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "text",
+        "options": {
+          "encoding": "utf8",
+          "fileName": "Region3.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1472,
+        96
+      ],
+      "id": "c9c0b327-ed82-445f-a60d-677194335889",
+      "name": "Convert to File3"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "text",
+        "options": {
+          "encoding": "utf8",
+          "fileName": "Region2.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1472,
+        -240
+      ],
+      "id": "f3c05d37-4e3f-4e8f-96dc-b0db4e580b24",
+      "name": "Convert to File2"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "/data/snapshots/Region2.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        -240
+      ],
+      "id": "92508a4f-123c-4a55-b0f3-ae74a69e784b",
+      "name": "Read/Write Files from Disk2"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "/data/snapshots/Region3.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        96
+      ],
+      "id": "eb1163d4-3d11-411a-b27c-e9823722b311",
+      "name": "Read/Write Files from Disk3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const jsonData = items[0].json;\n\nreturn [\n  {\n    json: {\n      text: JSON.stringify(jsonData, null, 2)\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        272
+      ],
+      "id": "42b73b99-2dd0-4c88-9e50-1fd0d6228aae",
+      "name": "Prepare File Output4"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "text",
+        "options": {
+          "encoding": "utf8",
+          "fileName": "Region4.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1472,
+        272
+      ],
+      "id": "89bbc6ba-e6b2-408a-8e15-98a7e7962921",
+      "name": "Convert to File4"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "/data/snapshots/Region4.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        272
+      ],
+      "id": "9c091bb0-54ba-4932-a591-7af1301288e1",
+      "name": "Read/Write Files from Disk4"
+    },
+    {
+      "parameters": {
+        "jsCode": "     const input = items[0].json;\n     const time = input.time;\n     const states = input.states || [];\n\n     const regionStates = states.filter(f => f.region === \"region4\");\n\n     return [\n       {\n         json: {\n           time,\n           region: \"region4\",\n           states: regionStates,\n         },\n       },\n     ];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        272
+      ],
+      "id": "1ace3a51-8351-4564-ab97-816f25e41725",
+      "name": "Region4"
+    },
+    {
+      "parameters": {
+        "jsCode": "   const input = items[0].json;\n   const states = input.states || [];\n\n   const alerts = [];\n\n   for (const flight of states) {\n     const altitude = flight.baro_altitude;\n     const velocity = flight.velocity;\n     const verticalRate = flight.vertical_rate;\n\n     const anomalies = [];\n\n     if (altitude !== null && altitude !== undefined) {\n       if (altitude > 40000 || altitude < 10000) {\n         anomalies.push(\"Altitude anomaly\");\n       }\n     }\n\n     if (velocity !== null && velocity !== undefined) {\n       if (velocity > 500 || velocity < 200) {\n         anomalies.push(\"Speed anomaly\");\n       }\n     }\n\n     if (verticalRate !== null && verticalRate !== undefined) {\n       if (Math.abs(verticalRate) > 2000) {\n         anomalies.push(\"Vertical rate anomaly\");\n       }\n     }\n\n     if (anomalies.length > 0) {\n       alerts.push({\n         icao24: flight.icao24,\n         callsign: flight.callsign,\n         region: flight.region || \"unknown\",\n         anomalies,\n         severity: \"warning\",      // or \"critical\" if you want extra logic\n         timestamp: input.time,\n       });\n     }\n   }\n\n   return [\n     {\n       json: {\n         alerts,\n       },\n     },\n   ];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        528
+      ],
+      "id": "eb4fb329-72eb-45c9-ab48-258491c9622d",
+      "name": "Alerts"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "text",
+        "options": {
+          "encoding": "utf8",
+          "fileName": "alerts.json"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1472,
+        528
+      ],
+      "id": "1f051408-b1e7-461a-91c6-4fc59f46b399",
+      "name": "Convert to File5"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "/data/snapshots/alerts.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        528
+      ],
+      "id": "c52b8ee6-abe4-481e-accc-e7e5b54d219a",
+      "name": "Read/Write Files from Disk5"
+    },
+    {
+      "parameters": {
+        "jsCode": "const jsonData = items[0].json;\n\nreturn [\n  {\n    json: {\n      text: JSON.stringify(jsonData, null, 2)\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        528
+      ],
+      "id": "1fa96551-8bcf-47de-83ed-0d4f23ba351f",
+      "name": "PrepareAlerts"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Normalize SnapShot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize SnapShot": {
+      "main": [
+        [
+          {
+            "node": "Assign Regions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare File Output": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign Regions": {
+      "main": [
+        [
+          {
+            "node": "Region 1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Region3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Region4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Region 2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Region 1": {
+      "main": [
+        [
+          {
+            "node": "Prepare File Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Region 2": {
+      "main": [
+        [
+          {
+            "node": "Prepare File Output2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare File Output2": {
+      "main": [
+        [
+          {
+            "node": "Convert to File2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Region3": {
+      "main": [
+        [
+          {
+            "node": "Prepare File Output3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare File Output3": {
+      "main": [
+        [
+          {
+            "node": "Convert to File3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File3": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File2": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare File Output4": {
+      "main": [
+        [
+          {
+            "node": "Convert to File4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File4": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Region4": {
+      "main": [
+        [
+          {
+            "node": "Prepare File Output4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File5": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alerts": {
+      "main": [
+        [
+          {
+            "node": "PrepareAlerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PrepareAlerts": {
+      "main": [
+        [
+          {
+            "node": "Convert to File5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d2b93056-4988-4f32-8f02-74dcb2b3db9b",
+  "meta": {
+    "instanceId": "493857c5db89704ae663468256e1bef3a63b4e1f73845536a8f2ef737d4da50e"
+  },
+  "id": "L1NUWHMkqzrzkrFO",
+  "tags": []
+}
