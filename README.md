@@ -1,6 +1,6 @@
 ## Real‑Time Airspace Copilot – Assignment 3
 
-This project implements a **multi‑agent, data‑driven airspace monitoring system** for Assignment 3. It combines:
+This project implements a **multi‑agent, data‑driven airspace monitoring system**. It combines:
 
 - An **n8n workflow** that ingests OpenSky Network data and writes JSON snapshots.
 - A **FastAPI “MCP‑style” server** that exposes flight and alert data as HTTP tools.
